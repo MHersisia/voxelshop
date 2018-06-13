@@ -126,14 +126,19 @@ public abstract class VoxelData extends AnimationHighlight implements VoxelDataI
                 for (String requestId : changedVisibleVoxelPlane.get(side).keySet()) {
                     for (int[] invalid : effected) {
                         // make sure this is set
-                        if (!changedVisibleVoxelPlane.get(side).get(requestId).containsKey(invalid[missingSide])) {
-                            changedVisibleVoxelPlane.get(side).get(requestId).put(
-                                    invalid[missingSide], new TIntObjectHashMap<int[]>());
+                    	HashMap<String, TIntObjectHashMap<TIntObjectHashMap<int[]>>> map = changedVisibleVoxelPlane.get(side);
+                        TIntObjectHashMap<TIntObjectHashMap<int[]>> objectMap = map.get(requestId);
+                        
+                        if (!objectMap.containsKey(invalid[missingSide])) {
+                        	objectMap.put(invalid[missingSide], new TIntObjectHashMap<int[]>());
                         }
                         // fill the details
                         int key = CubeIndexer.getId(invalid[0], invalid[1], invalid[2]);
-                        if (!changedVisibleVoxelPlane.get(side).get(requestId).get(invalid[missingSide]).containsKey(key)) {
-                            changedVisibleVoxelPlane.get(side).get(requestId).get(invalid[missingSide]).put(key, invalid);
+                        
+                        TIntObjectHashMap<int[]> invalidVoxelObject = objectMap.get(invalid[missingSide]);
+                        
+                        if (!invalidVoxelObject.containsKey(key)) {
+                            invalidVoxelObject.put(key, invalid);
                         }
                     }
                 }
@@ -210,9 +215,12 @@ public abstract class VoxelData extends AnimationHighlight implements VoxelDataI
         protected void applyAction() {
             if (isFirstCall()) {
                 // remember effected positions
-                effected = new int[dataContainer.layers.get(layerId).getVoxels().length][];
+                VoxelLayer voxelLayer = dataContainer.layers.get(layerId);
+                
+				effected = new int[voxelLayer.getVoxels().length][];
+				
                 // remove all points in this layer
-                Voxel[] voxels = dataContainer.layers.get(layerId).getVoxels();
+                Voxel[] voxels = voxelLayer.getVoxels();
                 for (int i = 0; i < voxels.length; i++) {
                     Voxel voxel = voxels[i];
                     historyManagerV.applyIntent(new RemoveVoxelIntent(voxel.id, true));
@@ -221,7 +229,7 @@ public abstract class VoxelData extends AnimationHighlight implements VoxelDataI
                 // remember the position of this layer
                 layerPosition = dataContainer.layerOrder.indexOf(layerId);
                 // and the name
-                layerName = dataContainer.layers.get(layerId).getName();
+                layerName = voxelLayer.getName();
             }
             dataContainer.layers.remove(layerId);
             dataContainer.layerOrder.remove(layerId);

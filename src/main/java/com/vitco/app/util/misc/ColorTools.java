@@ -1,13 +1,18 @@
 package com.vitco.app.util.misc;
 
 import java.awt.*;
+import java.util.List;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Basic color conversion tools
  */
 public class ColorTools {
+	
+	private ColorTools() {
+	    throw new IllegalStateException("Utility class");
+	}
     public static float[] colorToHSB(Color color) {
         return Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
     }
@@ -35,63 +40,25 @@ public class ColorTools {
 
     public static Color cmykToColor(float[] cmyk) {
 
-//        float C = ( cmyk[0] * ( 1 - cmyk[3] ) + cmyk[3] );
-//        float M = ( cmyk[1] * ( 1 - cmyk[3] ) + cmyk[3] );
-//        float Y = ( cmyk[2] * ( 1 - cmyk[3] ) + cmyk[3] );
-//
-//        int R = Math.round(( 1 - C ) * 255);
-//        int G = Math.round(( 1 - M ) * 255);
-//        int B = Math.round(( 1 - Y ) * 255);
-//
-//        return new Color(R, G, B);
-
-
-        float C3 = cmyk[0] * (1 - cmyk[3]) + 1 * cmyk[3];
-        if (C3 > 1) {
-            C3 = 1;
+        float cyan = cmyk[0] * (1 - cmyk[3]) + 1 * cmyk[3];
+        if (cyan > 1) {
+            cyan = 1;
         }
 
-        float M3 = cmyk[1] * (1 - cmyk[3]) + 1 * cmyk[3];
-        if (M3 > 1) {
-            M3 = 1;
+        float magenta = cmyk[1] * (1 - cmyk[3]) + 1 * cmyk[3];
+        if (magenta > 1) {
+            magenta = 1;
         }
 
-        float Y3 = cmyk[2] * (1 - cmyk[3]) + 1 * cmyk[3];
-        if (Y3 > 1) {
-            Y3 = 1;
+        float yellow = cmyk[2] * (1 - cmyk[3]) + 1 * cmyk[3];
+        if (yellow > 1) {
+            yellow = 1;
         }
 
-        return new Color((1 - C3), (1 - M3), (1 - Y3));
+        return new Color((1 - cyan), (1 - magenta), (1 - yellow));
     }
 
     public static float[] colorToCMYK(Color color) {
-
-//        int R = color.getRed();
-//        int G = color.getGreen();
-//        int B = color.getBlue();
-//
-//        float C = 1 - ( (float)R / 255 );
-//        float M = 1 - ( (float)G / 255 );
-//        float Y = 1 - ( (float)B / 255 );
-//
-//        float var_K = 1;
-//
-//        if ( C < var_K )   var_K = C;
-//        if ( M < var_K )   var_K = M;
-//        if ( Y < var_K )   var_K = Y;
-//        if ( var_K == 1 ) { //Black
-//            C = 0;
-//            M = 0;
-//            Y = 0;
-//        }
-//        else {
-//            C = ( C - var_K ) / ( 1 - var_K );
-//            M = ( M - var_K ) / ( 1 - var_K );
-//            Y = ( Y - var_K ) / ( 1 - var_K );
-//        }
-//        float K = var_K;
-//
-//        return new float[] {C,M,Y,K};
 
         float[] result = new float[4];
 
@@ -118,19 +85,19 @@ public class ColorTools {
     }
 
     // get ordered list of given colors (by perceived similarity
-    public static ArrayList<Color> orderColors(HashSet<Integer> colors) {
+    public static List<Color> orderColors(Set<Integer> colors) {
         // check if empty
         if (colors.isEmpty()) {
-            return new ArrayList<Color>();
+            return new ArrayList<>();
         }
 
         // extract colors
-        ArrayList<Color> list = new ArrayList<Color>();
+        ArrayList<Color> list = new ArrayList<>();
         for (Integer val : colors) {
             list.add(new Color(val));
         }
         // -- order
-        ArrayList<Color> sorted = new ArrayList<Color>();
+        ArrayList<Color> sorted = new ArrayList<>();
         sorted.add(list.remove(0));
         while (!list.isEmpty()) {
             double simFront = 0;

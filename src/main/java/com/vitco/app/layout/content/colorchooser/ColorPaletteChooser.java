@@ -13,6 +13,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.*;
+import java.util.List;
 
 /**
  * A color chooser that uses a color palette to determine/store the color.
@@ -134,7 +135,7 @@ public class ColorPaletteChooser extends ColorChooserPrototype {
         for (Color col : colors.values()) {
             unOrdered.add(col.getRGB());
         }
-        ArrayList<Color> ordered = ColorTools.orderColors(unOrdered);
+        List<Color> ordered = ColorTools.orderColors(unOrdered);
 
         // clear existing colors
         colors.clear();
@@ -156,7 +157,7 @@ public class ColorPaletteChooser extends ColorChooserPrototype {
     // add colors to this color palette (arrange automatically)
     public final void addColors(HashSet<Integer> colors) {
         // sort colors
-        ArrayList<Color> ordered = ColorTools.orderColors(colors);
+        List<Color> ordered = ColorTools.orderColors(colors);
 
         // ============
 

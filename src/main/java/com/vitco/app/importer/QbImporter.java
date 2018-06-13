@@ -23,39 +23,32 @@ public class QbImporter extends AbstractImporter {
 
     @Override
     protected boolean read(FileIn fileIn, RandomAccessFileIn raf) throws IOException {
-        fileIn.readIntRevUnsigned(); //int version = fileIn.readIntRevUnsigned();
-        //System.out.println("version: " + version);
+        fileIn.readIntRevUnsigned();
+
         int colorFormat = fileIn.readIntRevUnsigned();
-        //System.out.println("colorFormat: " + colorFormat);
         int zAxisOrientation = fileIn.readIntRevUnsigned();
-        //System.out.println("zAxisOrientation: " + zAxisOrientation);
         int compressed = fileIn.readIntRevUnsigned();
-        //System.out.println("compressed: " + compressed);
-        fileIn.readIntRevUnsigned(); // int visibilityMaskEncoded = fileIn.readIntRevUnsigned();
-        //System.out.println("visibilityMaskEncoded: " + visibilityMaskEncoded);
+
+        fileIn.readIntRevUnsigned(); 
+
         int numMatrices = fileIn.readIntRevUnsigned();
-        //System.out.println("numMatrices: " + numMatrices);
+
 
         for (int i = 0; i < numMatrices; i++) {
             // read matrix name
             int nameLength = fileIn.readByteUnsigned();
             String name = fileIn.readASCIIString(nameLength);
             addLayer(name);
-            //System.out.println("name: " + name);
 
             // read matrix size
             int sx = fileIn.readIntRevUnsigned();
             int sy = fileIn.readIntRevUnsigned();
             int sz = fileIn.readIntRevUnsigned();
 
-            //System.out.println(sx + " " + sy + " " + sz);
-
             // read offset size
             int cx = fileIn.readIntRev();
             int cy = fileIn.readIntRev();
             int cz = fileIn.readIntRev();
-
-            //System.out.println(cx + " " + cy + " " + cz);
 
             ByteBuffer byteBuffer = ByteBuffer.allocate(4);
 
@@ -67,14 +60,7 @@ public class QbImporter extends AbstractImporter {
                             int c2 = fileIn.readByteUnsigned();
                             int c3 = fileIn.readByteUnsigned();
                             int a = fileIn.readByteUnsigned(); // read visibility encoding
-                            if (a != 0) { // if voxel is not invisible (this should work correctly in all cases)
-                                int rgb = colorFormat == 0 ? new Color(c1,c2,c3).getRGB() : new Color(c3, c2, c1).getRGB();
-                                if (zAxisOrientation == 1) {
-                                    addVoxel(x + cx, -y - cy, z + cz, rgb);
-                                } else {
-                                    addVoxel(z + cz, -y - cy, x + cx, rgb);
-                                }
-                            }
+                            addVoxel(colorFormat, zAxisOrientation, cx, cy, cz, z, x, y, c1, c2, c3, a);
                         }
                     }
                 }
@@ -93,42 +79,12 @@ public class QbImporter extends AbstractImporter {
                             data = fileIn.readIntRev();
 
                             for (int j = 0; j < count; j++) {
-                                int x = (index + 1)%sx;
-                                int y = (index + 1)/sx;
+                                createVoxel(colorFormat, zAxisOrientation, sx, cx, cy, cz, byteBuffer, z, index, data);
                                 index++;
-                                byteBuffer.position(0);
-                                byteBuffer.putInt(data);
-                                int c1 = byteBuffer.get(3) & 0x0000FF;
-                                int c2 = byteBuffer.get(2) & 0x0000FF;
-                                int c3 = byteBuffer.get(1) & 0x0000FF;
-                                int a = byteBuffer.get(0) & 0x0000FF; // read visibility encoding
-                                if (a != 0) { // if voxel is not invisible
-                                    int rgb = colorFormat == 0 ? new Color(c1,c2,c3).getRGB() : new Color(c3, c2, c1).getRGB();
-                                    if (zAxisOrientation == 1) {
-                                        addVoxel(x + cx, -y - cy, z + cz, rgb);
-                                    } else {
-                                        addVoxel(z + cz, -y - cy, x + cx, rgb);
-                                    }
-                                }
                             }
                         } else {
-                            int x = (index + 1)%sx;
-                            int y = (index + 1)/sx;
+                            createVoxel(colorFormat, zAxisOrientation, sx, cx, cy, cz, byteBuffer, z, index, data);
                             index++;
-                            byteBuffer.position(0);
-                            byteBuffer.putInt(data);
-                            int c1 = byteBuffer.get(3) & 0x0000FF;
-                            int c2 = byteBuffer.get(2) & 0x0000FF;
-                            int c3 = byteBuffer.get(1) & 0x0000FF;
-                            int a = byteBuffer.get(0) & 0x0000FF; // read visibility encoding
-                            if (a != 0) { // if voxel is not invisible
-                                int rgb = colorFormat == 0 ? new Color(c1,c2,c3).getRGB() : new Color(c3, c2, c1).getRGB();
-                                if (zAxisOrientation == 1) {
-                                    addVoxel(x + cx, -y - cy, z + cz, rgb);
-                                } else {
-                                    addVoxel(z + cz, -y - cy, x + cx, rgb);
-                                }
-                            }
                         }
                     }
                     z++;
@@ -140,4 +96,30 @@ public class QbImporter extends AbstractImporter {
 
         return true;
     }
+
+	private void createVoxel(int colorFormat, int zAxisOrientation, int sx, int cx, int cy, int cz,
+			ByteBuffer byteBuffer, int z, int index, int data) {
+		int x = (index + 1)%sx;
+		int y = (index + 1)/sx;
+		
+		byteBuffer.position(0);
+		byteBuffer.putInt(data);
+		int c1 = byteBuffer.get(3) & 0x0000FF;
+		int c2 = byteBuffer.get(2) & 0x0000FF;
+		int c3 = byteBuffer.get(1) & 0x0000FF;
+		int a = byteBuffer.get(0) & 0x0000FF; // read visibility encoding
+		addVoxel(colorFormat, zAxisOrientation, cx, cy, cz, z, x, y, c1, c2, c3, a);
+	}
+
+	private void addVoxel(int colorFormat, int zAxisOrientation, int cx, int cy, int cz, int z, int x, int y, int c1,
+			int c2, int c3, int a) {
+		if (a != 0) { // if voxel is not invisible
+		    int rgb = colorFormat == 0 ? new Color(c1,c2,c3).getRGB() : new Color(c3, c2, c1).getRGB();
+		    if (zAxisOrientation == 1) {
+		        addVoxel(x + cx, -y - cy, z + cz, rgb);
+		    } else {
+		        addVoxel(z + cz, -y - cy, x + cx, rgb);
+		    }
+		}
+	}
 }
